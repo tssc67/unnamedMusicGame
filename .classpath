@@ -5,6 +5,7 @@
 	<classpathentry kind="lib" path="lwjgl/jar/lwjgl.jar" sourcepath="lwjgl/src.zip">
 		<attributes>
 			<attribute name="javadoc_location" value="jar:platform:/resource/unnamedMusicGame/lwjgl/doc/javadoc.zip!/"/>
+			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="unnamedMusicGame/lwjgl/native"/>
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="output" path="bin"/>

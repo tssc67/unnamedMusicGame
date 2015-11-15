@@ -1,4 +1,4 @@
-package me.sunchiro.game.engine;
+package me.sunchiro.game.engine.input;
 
 public abstract class KeyCallback {
 	public ActionType actionType;
