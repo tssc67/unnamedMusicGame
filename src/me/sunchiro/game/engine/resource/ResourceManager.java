@@ -17,5 +17,16 @@ public class ResourceManager {
 			return null;
 		}
 	}
+	public Resource get(String name){
+		return resources.get(name);
+	}
+	public Resource loadFile(String name,String fileName) throws FileNotFoundException, IOException{
+		Resource toAdd = new Resource();
+		toAdd.load(new DataInputStream(new FileInputStream(fileName)));
+		return resources.put(name, toAdd);
+	}
+	public void clear(){
+		resources.clear();
+	}
 	
 }

@@ -25,6 +25,9 @@ package me.sunchiro.game.engine.gl;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
+
+import me.sunchiro.game.engine.resource.ResourceManager;
+
 import static org.lwjgl.opengl.GL33.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -39,11 +42,9 @@ public class Graphic {
 	private int width;
 	private int height;
 	private long window;
-	private int vaoId = 0;
-	private int vboId = 0;
-	private int vertexCount = 0;
-
-	public Graphic() {
+	private ResourceManager res;
+	public Graphic(ResourceManager res) {
+		this.res = res;
 	}
 
 	public long getWindow() {
@@ -84,50 +85,14 @@ public class Graphic {
          
         // Map the internal OpenGL coordinate system to the entire screen
         GL11.glViewport(0, 0, width, height);
-		float[] vertices = {
-				// Left bottom triangle
-				-0.5f, 0.5f, 0f, -0.5f, -0.5f, 0f, 0.5f, -0.5f, 0f,
-				// Right top triangle
-				0.5f, -0.5f, 0f, 0.5f, 0.5f, 0f, -0.5f, 0.5f, 0f };
-		// Sending data to OpenGL requires the usage of (flipped) byte buffers
-		FloatBuffer verticesBuffer = BufferUtils.createFloatBuffer(vertices.length);
-		verticesBuffer.put(vertices);
-		verticesBuffer.flip();
-		vertexCount = 6;
-		// Create a new Vertex Array Object in memory and select it (bind)
-		// A VAO can have up to 16 attributes (VBO's) assigned to it by default
-		vaoId = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(vaoId);
-
-		// Create a new Vertex Buffer Object in memory and select it (bind)
-		// A VBO is a collection of Vectors which in this case resemble the
-		// location of each vertex.
-		vboId = GL15.glGenBuffers();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STATIC_DRAW);
-		// Put the VBO in the attributes list at index 0
-		GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-		// Deselect (bind to 0) the VBO
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-
-		// Deselect (bind to 0) the VAO
-		GL30.glBindVertexArray(0);
 
 	}
 
 	public void draw() {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
-
-		// Bind to the VAO that has all the information about the quad vertices
-		GL30.glBindVertexArray(vaoId);
-		GL20.glEnableVertexAttribArray(0);
-
-		// Draw the vertices
-		GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, vertexCount);
-
-		// Put everything back to default (deselect)
-		GL20.glDisableVertexAttribArray(0);
-		GL30.glBindVertexArray(0);
+		//
+		
+		//
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
