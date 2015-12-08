@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 public class Resource {
-	public byte[] data;
+	private byte[] data;
 	public String getString(){
 		return data.toString();
 	}

@@ -21,7 +21,6 @@ public class Engine {
 				ConfigurationOption.titleName);
 		input = new InputManager(g.getWindow());
 		while(!g.windowShouldClose()){
-			
 			update();
 			g.draw();
 		}
