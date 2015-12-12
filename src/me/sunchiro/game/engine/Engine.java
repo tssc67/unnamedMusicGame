@@ -28,4 +28,7 @@ public class Engine {
 	public void update(){
 		
 	}
+	public void destroy(){
+		
+	}
 }

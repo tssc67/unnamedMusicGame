@@ -39,20 +39,18 @@ import java.nio.FloatBuffer;
 public class Graphic {
 	private GLFWErrorCallback errorCallback;
 	private GLFWWindowSizeCallback windowSizeCalback;
+	private boolean FBOEnabled;
 	private int width;
 	private int height;
 	private long window;
 	private ResourceManager res;
+	private Shader shader;
+
 	public Graphic(ResourceManager res) {
 		this.res = res;
+		shader = new Shader();
 	}
 
-	public long getWindow() {
-		return window;
-	}
-	public boolean windowShouldClose(){
-		return glfwWindowShouldClose(window) == GL11.GL_TRUE;
-	}
 	public void createWindow(int width, int height, String name) {
 		this.width = width;
 		this.height = height;
@@ -77,21 +75,32 @@ public class Graphic {
 		glfwMakeContextCurrent(window);
 		glfwSwapInterval(1);
 		GL.createCapabilities();
+		setCapabilities();
 		glfwShowWindow(window);
 
-
 		// Setup an XNA like background color
-        GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
-         
-        // Map the internal OpenGL coordinate system to the entire screen
-        GL11.glViewport(0, 0, width, height);
+		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
+
+		// Map the internal OpenGL coordinate system to the entire screen
+		GL11.glViewport(0, 0, width, height);
+
+		shader.setupShader();
+
+	}
+
+	public void setCapabilities() {
+		FBOEnabled = GL.getCapabilities().GL_EXT_framebuffer_object;
+	}
+
+	public void destroy() {
+		shader.destroy();
 
 	}
 
 	public void draw() {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT);
 		//
-		
+
 		//
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -105,6 +114,14 @@ public class Graphic {
 				GL11.glViewport(0, 0, width, height);
 			}
 		};
+	}
+
+	public long getWindow() {
+		return window;
+	}
+
+	public boolean windowShouldClose() {
+		return glfwWindowShouldClose(window) == GL11.GL_TRUE;
 	}
 
 	public void resizeWindow(int width, int height) {
