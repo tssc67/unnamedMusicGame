@@ -1,8 +1,8 @@
 package me.sunchiro.game.engine;
 
 public class ConfigurationOption {
-	public static int screenWidth = 800;
-	public static int screenHeight = 600;
-	public static String titleName = "unnamedMusicGame";
+	public static int screenWidth = 1027;
+	public static int screenHeight = 768;
+	public static String titleName = "InTheBox";
 	
 }	

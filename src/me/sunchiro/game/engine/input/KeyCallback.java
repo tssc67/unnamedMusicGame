@@ -7,9 +7,5 @@ public abstract class KeyCallback {
 	public enum	ActionType{
 		HOLD,keyDown,keyUp
 	}
-	public KeyCallback(ActionType actionType,int key){
-		this.actionType = actionType;
-		this.key = key;
-	}
 	public abstract void run();
 }

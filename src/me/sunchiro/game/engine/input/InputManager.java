@@ -17,7 +17,6 @@ public class InputManager {
 		keyCallback = keyboardCallbackHandler();
 		glfwSetKeyCallback(window, keyCallback);
 	}
-
 	private GLFWKeyCallback keyboardCallbackHandler() {
 		return new GLFWKeyCallback() {
 
@@ -25,10 +24,10 @@ public class InputManager {
 			public void invoke(long window, int key, int scancode, int action, int mods) {
 				// TODO Auto-generated method stub
 				KeyCallback.ActionType generatedAction;
-				if ((action == GLFW_PRESS) ^ keyState[key]) {
+				if ((action == GLFW_PRESS) && !keyState[key]) {
 					generatedAction = KeyCallback.ActionType.keyDown;
 					keyState[key] = true;
-				} else if ((action == GLFW_RELEASE) ^ keyState[key]) {
+				} else if ((action == GLFW_RELEASE)) {
 					generatedAction = KeyCallback.ActionType.keyUp;
 					keyState[key] = false;
 				} else {

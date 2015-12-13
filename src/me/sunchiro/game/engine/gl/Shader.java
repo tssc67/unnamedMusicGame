@@ -9,7 +9,7 @@ class Shader {
 	private int vsId = 0;
 	private int fsId = 0;
 	private int pId = 0;
-
+	private int mvpMatLocation = 0;
 	public void setupShader() {
 		int errorCheckValue = GL11.glGetError();
 		vsId = this.loadShader("/shaders/quad/vertex.glsl", GL20.GL_VERTEX_SHADER);
@@ -23,10 +23,12 @@ class Shader {
 		GL20.glBindAttribLocation(pId, 0, "in_Position");
 		// Color information will be attribute 1
 		GL20.glBindAttribLocation(pId, 1, "in_Color");
-
+		GL20.glBindAttribLocation(pId, 2, "in_TextureCoord");
+		
 		GL20.glLinkProgram(pId);
 		GL20.glValidateProgram(pId);
 
+		mvpMatLocation = GL20.glGetUniformLocation(pId, "mvpMatrix");
 		errorCheckValue = GL11.glGetError();
 		if (errorCheckValue != GL11.GL_NO_ERROR) {
 			System.out.println("ERROR - Could not create the shaders");
@@ -66,5 +68,12 @@ class Shader {
 		GL20.glDeleteShader(vsId);
 		GL20.glDeleteShader(fsId);
 		GL20.glDeleteProgram(pId);
+	}
+	
+	public int getPID(){
+		return pId;
+	}
+	public int getMVPLocation(){
+		return mvpMatLocation;
 	}
 }

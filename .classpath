@@ -9,5 +9,6 @@
 			<attribute name="org.eclipse.jdt.launching.CLASSPATH_ATTR_LIBRARY_PATH_ENTRY" value="unnamedMusicGame/lwjgl/native"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="TWL.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
