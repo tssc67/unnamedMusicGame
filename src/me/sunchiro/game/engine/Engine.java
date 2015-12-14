@@ -1,8 +1,10 @@
 package me.sunchiro.game.engine;
 
+import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import me.sunchiro.game.engine.gl.Graphic;
+import me.sunchiro.game.engine.gl.MathUtil;
 import me.sunchiro.game.engine.gl.object.Vertex;
 import me.sunchiro.game.engine.input.InputManager;
 import me.sunchiro.game.engine.input.KeyCallback;
@@ -27,9 +29,7 @@ public class Engine {
 			}
 			@Override
 			public void run() {
-				Vertex v = g.quad.getVertex()[0];
-				v.setX(v.getXYZW()[0]-0.1f);
-				// TODO Auto-generated method stub
+				new Matrix4f().rotationY(MathUtil.toRadian(10)).transformPoint(g.eye);
 			}
 		});
 		while(!g.windowShouldClose()){

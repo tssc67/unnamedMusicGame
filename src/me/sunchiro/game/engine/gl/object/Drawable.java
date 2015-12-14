@@ -3,11 +3,14 @@ package me.sunchiro.game.engine.gl.object;
 import java.nio.FloatBuffer;
 
 public abstract class Drawable{
-	private Vertex[] vertexs;
-	private byte[] indices;
+	protected Vertex[] vertexs;
+	protected byte[] indices;
 	private boolean visible = true;
 	public int size;
 	public boolean markAsRemove = false;
+	protected Drawable(){
+		
+	}
 	public Drawable(Vertex[] vertexs,byte[] indices){
 		this.vertexs = vertexs;
 		this.indices = indices;

@@ -60,7 +60,7 @@ public class Vertex {
 		xyzw[2] = z;
 	}
 
-	public void setUV(int s, int t) {
+	public void setUV(float s, float t) {
 		st[0] = s;
 		st[1] = t;
 	}
@@ -80,6 +80,25 @@ public class Vertex {
 		return out;
 	}
 
+	public void setElemets(float[] in) {
+		xyzw[0] = in[0];
+		xyzw[1] = in[1];
+		xyzw[2] = in[2];
+		xyzw[3] = in[3];
+		rgba[0] = in[4];
+		rgba[1] = in[5];
+		rgba[2] = in[6];
+		rgba[3] = in[7];
+		st[0] = in[8];
+		st[1] = in[9];
+	}
+	public Vertex copyTo(Vertex v){
+		v.setElemets(getElements());
+		return v;
+	}
+	public Vertex clone(){
+		return copyTo(new Vertex());
+	}
 	public float[] getXYZW() {
 		return xyzw;
 	}

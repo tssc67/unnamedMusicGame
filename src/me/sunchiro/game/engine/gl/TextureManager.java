@@ -27,7 +27,6 @@ public class TextureManager {
 			PNGDecoder decoder = new PNGDecoder(in);
 			tWidth = decoder.getWidth();
 			tHeight = decoder.getHeight();
-			System.out.println(decoder.hasAlpha());
 			buff = ByteBuffer.allocateDirect(4 * tWidth * tHeight);
 			decoder.decode(buff, tWidth*4, Format.RGBA);
 			buff.flip();
@@ -49,7 +48,7 @@ public class TextureManager {
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 
 		// Setup what to do when the texture has to be scaled
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST );
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
 
 		int errorValue = GL11.glGetError();

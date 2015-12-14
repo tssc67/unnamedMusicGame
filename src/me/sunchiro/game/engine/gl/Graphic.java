@@ -23,6 +23,8 @@
 package me.sunchiro.game.engine.gl;
 
 import org.joml.Matrix4f;
+import org.joml.Vector2f;
+import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
@@ -59,10 +61,16 @@ public class Graphic {
 	private FloatBuffer matBuff = null;
 	private LinkedList<Drawable> objects = new LinkedList<Drawable>();
 	public static Graphic instance;
-	
+	public Vector3f eye = new Vector3f(1,1,1);
+	public Vector3f look = new Vector3f(0,0,0);
 	private int vertexCount = 0;
 	private int indicesCount = 0;
-	
+	int tid;
+	ByteBuffer vertByteBuff;
+	int vaoId = 0;
+	int vboId = 0;
+	int vboiId = 0;
+
 	public Graphic(ResourceManager res) {
 		this.res = res;
 		shader = new Shader();
@@ -107,91 +115,96 @@ public class Graphic {
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, width, height);
 		matBuff = BufferUtils.createFloatBuffer(16);
-		testQuad();
+		vaoId = GL30.glGenVertexArrays();
+		vboiId = GL15.glGenBuffers();
+		vboId = GL15.glGenBuffers();
+		tid = texManager.loadTexture("/textures/alignBox.png", GL13.GL_TEXTURE0);
 		shader.setupShader();
+		testQuad();
 
 	}
 
-	int tid;
-	public Quad quad;
-	ByteBuffer vertByteBuff;
-	int vaoId = 0;
-	int vboId = 0;
-	int vboiId = 0;
-	public void addObject(Drawable object){
+	public void addObject(Drawable object) {
 		objects.add(object);
 		vertexCount += object.getVertex().length;
-		indicesCount += object.getVertex().length;
+		indicesCount += object.getIndices().length;
 		resizeBuffer();
 	}
-	public void addObjects(Drawable[] objectArray){
-		for(Drawable object:objectArray){
+
+	public void addObjects(Drawable[] objectArray) {
+		for (Drawable object : objectArray) {
 			vertexCount += object.getVertex().length;
 			indicesCount += object.getIndices().length;
 		}
 		resizeBuffer();
 	}
-	public void removeObject(){
+
+	public void removeObject() {
 	}
-	public void resizeBuffer(){
+
+	public void resizeBuffer() {
 		vertByteBuff = BufferUtils.createByteBuffer(vertexCount * Vertex.stride);
 		ByteBuffer indicesBuffer = BufferUtils.createByteBuffer(indicesCount);
 		FloatBuffer vertFloatBuff = vertByteBuff.asFloatBuffer();
-		GL30.glBindVertexArray(vaoId);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertFloatBuff, GL15.GL_STREAM_DRAW);
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-		GL30.glBindVertexArray(0);
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-	}
-	public void testQuad() {
-		tid = texManager.loadTexture("/textures/rb.png", GL13.GL_TEXTURE0);
-
-		Vertex v0 = new Vertex();
-		Vertex v1 = new Vertex();
-		Vertex v2 = new Vertex();
-		Vertex v3 = new Vertex();
-		v0.setXYZ(-0.5f, 0.5f, 0f);
-		v0.setUV(0, 0);
-		v1.setUV(0, 1);
-		v2.setUV(1, 1);
-		v3.setUV(1, 0);
-		v1.setXYZ(-0.5f, -0.5f, 0);
-		v2.setXYZ(0.5f, -0.5f, 0);
-		v3.setXYZ(0.5f, 0.5f, 0);
-		Vertex[] vertexs = new Vertex[] { v0, v1, v2, v3 };
-		quad = new Quad(vertexs);
-		vertByteBuff = BufferUtils.createByteBuffer(4 * Vertex.stride);
-		FloatBuffer vertFloatBuff = vertByteBuff.asFloatBuffer();
-		for (int i = 0; i < 4; i++) {
-			vertFloatBuff.put(vertexs[i].getElements());
+		for (Drawable object : objects) {
+			object.store(vertFloatBuff);
+			indicesBuffer.put(object.getIndices());
 		}
-		vertFloatBuff.flip();
-		ByteBuffer indicesBuffer = BufferUtils.createByteBuffer(quad.getIndices().length);
-		indicesBuffer.put(quad.getIndices());
+		System.out.println(indicesCount);
 		indicesBuffer.flip();
-
-		vaoId = GL30.glGenVertexArrays();
+		vertFloatBuff.flip();
 		GL30.glBindVertexArray(vaoId);
-		vboId = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 		GL15.glBufferData(GL15.GL_ARRAY_BUFFER, vertFloatBuff, GL15.GL_STREAM_DRAW);
-
 		GL20.glVertexAttribPointer(0, 4, GL11.GL_FLOAT, false, Vertex.stride, 0);
 		GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, Vertex.stride, 16);
 		GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, Vertex.stride, 32);
 
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-
 		GL30.glBindVertexArray(0);
 
-		vboiId = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
+
 		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
+	}
 
+	public void testQuad() {
+
+		Vertex v0 = new Vertex();
+		Vertex v1 = new Vertex();
+		Vertex v2 = new Vertex();
+		Vertex v3 = new Vertex();
+		v0.setUV(0, 0);
+		v1.setUV(0, 1);
+		v2.setUV(1, 1);
+		v3.setUV(1, 0);
+		v0.setXYZ(-0.5f, 0.5f, 0f);
+		v1.setXYZ(-0.5f, -0.5f, 0);
+		v2.setXYZ(0.5f, -0.5f, 0);
+		v3.setXYZ(0.5f, 0.5f, 0);
+		Vertex[] vertexs = new Vertex[] { v0, v1, v2, v3 };
+		addObject(new Quad(vertexs));
+		v0 = new Vertex();
+		v1 = new Vertex();
+		v2 = new Vertex();
+		v3 = new Vertex();
+		Vertex v4 = new Vertex();
+		Vertex v5 = new Vertex();
+		Vertex v6 = new Vertex();
+		Vertex v7 = new Vertex();
+		
+		v0.setXYZ(-1.5f, 1.5f, 0);
+		v1.setXYZ(-1.5f, 0.5f, 0);
+		v2.setXYZ(-0.5f, 0.5f, 0);
+		v3.setXYZ(-0.5f, 1.5f, 0);
+		v4.setXYZ(-1.5f, 1.5f, -1f);
+		v5.setXYZ(-1.5f, 0.5f, -1f);
+		v6.setXYZ(-0.5f, 0.5f, -1f);
+		v7.setXYZ(-0.5f, 1.5f, -1f);
+		Cube cube = new Cube(new Vertex[]{v0,v1,v2,v3,v4,v5,v6,v7});
+		cube.mapTexture(new Vector2f(0,0), new Vector2f(1,1));
+		addObject(cube);
 	}
 
 	public void setCapabilities() {
@@ -207,21 +220,25 @@ public class Graphic {
 		logic();
 		render();
 	}
+
 	int x = 0;
+
 	private void logic() {
-		mvpMat = new Matrix4f().perspective(MathUtil.toRadian(60), aspectRatio, near_plane, far_plane).lookAt(1.0f,
-				1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
-		
+
+		mvpMat = new Matrix4f().perspective(MathUtil.toRadian(60), aspectRatio, near_plane, far_plane)
+				.lookAt(eye.x,eye.y, eye.z, look.x, look.y, look.z, 0.0f, 1.0f, 0.0f);
+
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-		for(Drawable object:objects){
-			FloatBuffer vertFloatBuff = vertByteBuff.asFloatBuffer();
-			vertFloatBuff.rewind();
-//			vertFloatBuff.put(v.getElements());
+		int offset = 0;
+		FloatBuffer vertFloatBuff = vertByteBuff.asFloatBuffer();
+		GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, offset, vertByteBuff);
+		vertFloatBuff.rewind();
+		for (Drawable object : objects) {
+			// vertFloatBuff.put(v.getElements());
 			object.store(vertFloatBuff);
-			vertFloatBuff.flip();
-			GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, Vertex.stride, vertByteBuff);
 		}
-		
+		vertFloatBuff.flip();
+		GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, offset, vertByteBuff);
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		GL20.glUseProgram(shader.getPID());
 		mvpMat.get(0, matBuff);
@@ -231,7 +248,7 @@ public class Graphic {
 		GL20.glUseProgram(0);
 	}
 
-	private void render() {	
+	private void render() {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL20.glUseProgram(shader.getPID());
 		//
@@ -245,7 +262,14 @@ public class Graphic {
 
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid));
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-		GL11.glDrawElements(GL11.GL_TRIANGLES, 6, GL11.GL_UNSIGNED_BYTE, 0);
+		long offset = 0;
+		int shift = 0;
+		for (Drawable object : objects) {
+			GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE, offset,shift);
+			
+			offset += object.getIndices().length;
+			shift+=object.getVertex().length;
+		}
 
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		GL20.glDisableVertexAttribArray(0);
