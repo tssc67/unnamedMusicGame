@@ -35,6 +35,7 @@ import me.sunchiro.game.engine.resource.ResourceManager;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
+import java.awt.Font;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -54,12 +55,14 @@ public class Graphic {
 	private Matrix4f mvpMat;
 	private FloatBuffer matBuff = null;
 	private LinkedList<Drawable> objects = new LinkedList<Drawable>();
+	private LinkedList<Drawable> orthoObjects = new LinkedList<Drawable>();
 	public static Graphic instance;
-	public Vector3f eye = new Vector3f(1,1,1);
-	public Vector3f look = new Vector3f(0,0,0);
+	public Vector3f eye = new Vector3f(1, 1, 1);
+	public Vector3f look = new Vector3f(0, 0, 0);
 	private int vertexCount = 0;
 	private int indicesCount = 0;
 	int tid;
+	int tid_charmap;
 	ByteBuffer vertByteBuff;
 	int vaoId = 0;
 	int vboId = 0;
@@ -102,11 +105,10 @@ public class Graphic {
 		glfwShowWindow(window);
 
 		// Setup an XNA like background color
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glDepthFunc(GL11.GL_LESS);
-		
+
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, width, height);
@@ -115,6 +117,7 @@ public class Graphic {
 		vboiId = GL15.glGenBuffers();
 		vboId = GL15.glGenBuffers();
 		tid = texManager.loadTexture("/textures/alignBox.png", GL13.GL_TEXTURE0);
+		tid_charmap = texManager.loadTexture("/textures/charmap.png", GL13.GL_TEXTURE0);
 		shader.setupShader();
 		testQuad();
 
@@ -127,10 +130,27 @@ public class Graphic {
 		resizeBuffer();
 	}
 
+	public void addOrthoObject(Drawable object) {
+		orthoObjects.add(object);
+		vertexCount += object.getVertex().length;
+		indicesCount += object.getIndices().length;
+		resizeBuffer();
+	}
+
 	public void addObjects(Drawable[] objectArray) {
 		for (Drawable object : objectArray) {
 			vertexCount += object.getVertex().length;
 			indicesCount += object.getIndices().length;
+			objects.add(object);
+		}
+		resizeBuffer();
+	}
+
+	public void addOrthoObjects(Drawable[] objectArray) {
+		for (Drawable object : objectArray) {
+			vertexCount += object.getVertex().length;
+			indicesCount += object.getIndices().length;
+			orthoObjects.add(object);
 		}
 		resizeBuffer();
 	}
@@ -143,6 +163,10 @@ public class Graphic {
 		ByteBuffer indicesBuffer = BufferUtils.createByteBuffer(indicesCount);
 		FloatBuffer vertFloatBuff = vertByteBuff.asFloatBuffer();
 		for (Drawable object : objects) {
+			object.store(vertFloatBuff);
+			indicesBuffer.put(object.getIndices());
+		}
+		for (Drawable object : orthoObjects) {
 			object.store(vertFloatBuff);
 			indicesBuffer.put(object.getIndices());
 		}
@@ -165,30 +189,47 @@ public class Graphic {
 	}
 
 	public void testQuad() {
+		String l = "FUCK THIS SHIT I'M OUT";
+		int left = 0;
+		for(int i=0;i<l.length();i++){
+			System.out.println(CharQuad.getCharWidth(l.charAt(i)));
+			float width =20f  * CharQuad.getCharWidth(l.charAt(i));
+			Vertex v0 = new Vertex();
+			Vertex v1 = new Vertex();
+			Vertex v2 = new Vertex();
+			Vertex v3 = new Vertex();
+			v0.setUV(0, 0);
+			v1.setUV(0, 1);
+			v2.setUV(1, 1);
+			v3.setUV(1, 0);
+			v0.setXYZ(left, 0, 0);
+			v1.setXYZ(left, 25, 0);
+			v2.setXYZ(left+width, 25, 0);
+			v3.setXYZ(left+width, 0, 0);
+			float col = (float)Math.random();
+			float col2 = (float)Math.random();
+			float col3 = (float)Math.random();
+			
+			v0.setRGBA(col,col2,col3,1);
+			v1.setRGBA(col,col2,col3,1);
+			v2.setRGBA(col,col2,col3,1);
+			v3.setRGBA(col,col2,col3,1);
+			Vertex[] vertexs = new Vertex[] { v0, v1, v2, v3 };
+			CharQuad chr = new CharQuad(vertexs);
+			chr.setCharacter(l.charAt(i));
+			addOrthoObject(chr);
+			left+=width;
+		}
 
 		Vertex v0 = new Vertex();
 		Vertex v1 = new Vertex();
 		Vertex v2 = new Vertex();
 		Vertex v3 = new Vertex();
-		v0.setUV(0, 0);
-		v1.setUV(0, 1);
-		v2.setUV(1, 1);
-		v3.setUV(1, 0);
-		v0.setXYZ(-0.5f, 0.5f, 0f);
-		v1.setXYZ(-0.5f, -0.5f, 0);
-		v2.setXYZ(0.5f, -0.5f, 0);
-		v3.setXYZ(0.5f, 0.5f, 0);
-		Vertex[] vertexs = new Vertex[] { v0, v1, v2, v3 };
-		addObject(new Quad(vertexs));
-		v0 = new Vertex();
-		v1 = new Vertex();
-		v2 = new Vertex();
-		v3 = new Vertex();
 		Vertex v4 = new Vertex();
 		Vertex v5 = new Vertex();
 		Vertex v6 = new Vertex();
 		Vertex v7 = new Vertex();
-		
+
 		v0.setXYZ(-1.5f, 1.5f, 0);
 		v1.setXYZ(-1.5f, 0.5f, 0);
 		v2.setXYZ(-0.5f, 0.5f, 0);
@@ -197,8 +238,8 @@ public class Graphic {
 		v5.setXYZ(-1.5f, 0.5f, -1f);
 		v6.setXYZ(-0.5f, 0.5f, -1f);
 		v7.setXYZ(-0.5f, 1.5f, -1f);
-		Cube cube = new Cube(new Vertex[]{v0,v1,v2,v3,v4,v5,v6,v7});
-		cube.mapTexture(new Vector2f(0,0), new Vector2f(1,1));
+		Cube cube = new Cube(new Vertex[] { v0, v1, v2, v3, v4, v5, v6, v7 });
+		cube.mapTexture(new Vector2f(0, 0f), new Vector2f(1, 1 / 8f));
 		addObject(cube);
 	}
 
@@ -226,7 +267,9 @@ public class Graphic {
 		GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, offset, vertByteBuff);
 		vertFloatBuff.rewind();
 		for (Drawable object : objects) {
-			// vertFloatBuff.put(v.getElements());
+			object.store(vertFloatBuff);
+		}
+		for (Drawable object : orthoObjects) {
 			object.store(vertFloatBuff);
 		}
 		vertFloatBuff.flip();
@@ -256,13 +299,19 @@ public class Graphic {
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
 		long offset = 0;
 		int shift = 0;
+		GL11.glAlphaFunc(GL11.GL_GREATER, 0.01f);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glEnable(GL11.GL_BLEND);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		for (Drawable object : objects) {
-			GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE, offset,shift);
-			
+			if (object.isVisible())
+				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
+						offset, shift);
+
 			offset += object.getIndices().length;
-			shift+=object.getVertex().length;
+			shift += object.getVertex().length;
 		}
-		render2d();
+		render2d(offset,shift);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		GL20.glDisableVertexAttribArray(0);
 		GL20.glDisableVertexAttribArray(1);
@@ -274,10 +323,21 @@ public class Graphic {
 		glfwPollEvents();
 
 	}
-	private void render2d(){
-		cam.getOrthoMVP().get(0,matBuff);
+
+	private void render2d(long offset,int shift) {
+		cam.getOrthoMVP().get(0, matBuff);
 		GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
+		for(Drawable object: orthoObjects){
+			if(object.isVisible())
+				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
+						offset, shift);
+			offset += object.getIndices().length;
+			shift += object.getVertex().length;
+		}
+		//static utility function
 	}
+
 	private GLFWWindowSizeCallback resizeCallback() {
 		return windowSizeCalback = new GLFWWindowSizeCallback() {
 
@@ -325,15 +385,15 @@ public class Graphic {
 		this.width = width;
 		resizeWindow(width, height);
 	}
-	
+
 	public int getHeight() {
 		return height;
 	}
 
-	public float getAspectRatio(){
-		return width/(float)height;
+	public float getAspectRatio() {
+		return width / (float) height;
 	}
-	
+
 	public void setHeight(int height) {
 		this.height = height;
 		resizeWindow(width, height);

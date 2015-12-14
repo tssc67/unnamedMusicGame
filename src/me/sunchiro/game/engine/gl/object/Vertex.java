@@ -80,7 +80,7 @@ public class Vertex {
 		return out;
 	}
 
-	public void setElemets(float[] in) {
+	public void setElements(float[] in) {
 		xyzw[0] = in[0];
 		xyzw[1] = in[1];
 		xyzw[2] = in[2];
@@ -93,7 +93,7 @@ public class Vertex {
 		st[1] = in[9];
 	}
 	public Vertex copyTo(Vertex v){
-		v.setElemets(getElements());
+		v.setElements(getElements());
 		return v;
 	}
 	public Vertex clone(){
