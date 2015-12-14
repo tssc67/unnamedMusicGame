@@ -10,6 +10,7 @@ class Shader {
 	private int fsId = 0;
 	private int pId = 0;
 	private int mvpMatLocation = 0;
+	private int orthoMatLocation = 0;
 	public void setupShader() {
 		int errorCheckValue = GL11.glGetError();
 		vsId = this.loadShader("/shaders/quad/vertex.glsl", GL20.GL_VERTEX_SHADER);
@@ -75,5 +76,8 @@ class Shader {
 	}
 	public int getMVPLocation(){
 		return mvpMatLocation;
+	}
+	public int getOrthoMatLocation(){
+		return orthoMatLocation;
 	}
 }

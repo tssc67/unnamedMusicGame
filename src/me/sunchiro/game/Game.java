@@ -6,6 +6,6 @@ public class Game {
 	protected Engine eng;
 	public Game(){
 		eng = new Engine();
-		eng.run();
+		new Thread (eng).start();
 	}
 }

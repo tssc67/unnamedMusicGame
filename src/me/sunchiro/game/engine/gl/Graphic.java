@@ -38,10 +38,7 @@ import static org.lwjgl.system.MemoryUtil.*;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
 
 public class Graphic {
 	private GLFWErrorCallback errorCallback;
@@ -53,11 +50,8 @@ public class Graphic {
 	private ResourceManager res;
 	public Shader shader;
 	public TextureManager texManager;
+	public Camera cam;
 	private Matrix4f mvpMat;
-	public float fov = 60f;
-	private float aspectRatio = 800f / 600f;
-	private float near_plane = 0.1f;
-	private float far_plane = 100f;
 	private FloatBuffer matBuff = null;
 	private LinkedList<Drawable> objects = new LinkedList<Drawable>();
 	public static Graphic instance;
@@ -75,6 +69,7 @@ public class Graphic {
 		this.res = res;
 		shader = new Shader();
 		texManager = new TextureManager();
+		cam = new Camera();
 	}
 
 	public void createWindow(int width, int height, String name) {
@@ -111,6 +106,7 @@ public class Graphic {
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthFunc(GL11.GL_LESS);
+		
 		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, width, height);
@@ -150,7 +146,6 @@ public class Graphic {
 			object.store(vertFloatBuff);
 			indicesBuffer.put(object.getIndices());
 		}
-		System.out.println(indicesCount);
 		indicesBuffer.flip();
 		vertFloatBuff.flip();
 		GL30.glBindVertexArray(vaoId);
@@ -221,12 +216,9 @@ public class Graphic {
 		render();
 	}
 
-	int x = 0;
-
 	private void logic() {
 
-		mvpMat = new Matrix4f().perspective(MathUtil.toRadian(60), aspectRatio, near_plane, far_plane)
-				.lookAt(eye.x,eye.y, eye.z, look.x, look.y, look.z, 0.0f, 1.0f, 0.0f);
+		mvpMat = cam.getMVP();
 
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 		int offset = 0;
@@ -270,7 +262,7 @@ public class Graphic {
 			offset += object.getIndices().length;
 			shift+=object.getVertex().length;
 		}
-
+		render2d();
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		GL20.glDisableVertexAttribArray(0);
 		GL20.glDisableVertexAttribArray(1);
@@ -282,7 +274,10 @@ public class Graphic {
 		glfwPollEvents();
 
 	}
-
+	private void render2d(){
+		cam.getOrthoMVP().get(0,matBuff);
+		GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
+	}
 	private GLFWWindowSizeCallback resizeCallback() {
 		return windowSizeCalback = new GLFWWindowSizeCallback() {
 
@@ -290,7 +285,7 @@ public class Graphic {
 			public void invoke(long window, int newwidth, int newheight) {
 				width = newwidth;
 				height = newheight;
-				aspectRatio = width / (float) height;
+				cam.resize(newwidth, newheight);
 				GL11.glViewport(0, 0, width, height);
 
 			}
@@ -330,11 +325,15 @@ public class Graphic {
 		this.width = width;
 		resizeWindow(width, height);
 	}
-
+	
 	public int getHeight() {
 		return height;
 	}
 
+	public float getAspectRatio(){
+		return width/(float)height;
+	}
+	
 	public void setHeight(int height) {
 		this.height = height;
 		resizeWindow(width, height);

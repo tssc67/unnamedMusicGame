@@ -21,7 +21,6 @@ public class Cube extends Drawable{
 		{1,1},
 		{1,0}
 	};
-	private Quad[] quads = new Quad[6];
 	public Cube(Vertex[] vertexs) {
 		
 		Vertex[] cubeVert = new Vertex[size];
