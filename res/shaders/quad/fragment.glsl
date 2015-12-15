@@ -12,7 +12,7 @@ void main(void) {
 	out_Color = pass_Color;
 	// Override out_Color with our texture pixel
 	out_Color = texture2D(texture_diffuse, pass_TextureCoord);
-	if(inverseAlpha){
+	if(inverseAlpha>0){
 		out_Color.a = 1 - out_Color.a;
 	}
 	out_Color = vec4(out_Color.rgba * pass_Color.rgba);

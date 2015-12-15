@@ -6,10 +6,11 @@ import paulscode.sound.SoundSystemConfig;
 import paulscode.sound.SoundSystemException;
 import paulscode.sound.codecs.CodecWav;
 import paulscode.sound.libraries.LibraryJavaSound;
+import paulscode.sound.libraries.LibraryLWJGLOpenAL;
 
 public class Audio {
 	// public HashMap<String, WaveData> waves;
-	static SoundSystem soundSystem;
+	public static SoundSystem soundSystem;
 
 	public static void init() {
 		try {

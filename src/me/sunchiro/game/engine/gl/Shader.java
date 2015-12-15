@@ -35,6 +35,7 @@ class Shader {
 		errorCheckValue = GL11.glGetError();
 		if (errorCheckValue != GL11.GL_NO_ERROR) {
 			System.out.println("ERROR - Could not create the shaders");
+			System.out.println(errorCheckValue);
 			System.exit(-1);
 		}
 	}

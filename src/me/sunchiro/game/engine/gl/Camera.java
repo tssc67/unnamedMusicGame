@@ -22,7 +22,7 @@ public class Camera {
 	private Vector3f getLookVector() {
 		Vector3f look = new Vector3f(0, 0, -1);
 		new Matrix4f().rotateX(MathUtil.toRadian(pitch)).transformPoint(look);
-		new Matrix4f().rotateY(MathUtil.toRadian(yaw)).transformPoint(look);
+		new Matrix4f().rotateY(MathUtil.toRadian(yaw+180)).transformPoint(look);
 		new Matrix4f().translate(eye).transformPoint(look);
 		return look;
 	}

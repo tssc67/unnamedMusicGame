@@ -4,7 +4,7 @@ package me.sunchiro.game.engine.input;
 public abstract class CursorCallback {
 	public ActionType actionType;
 	public enum	ActionType{
-		MOVE
+		MOVE,CLICK
 	}
-	public abstract void run(double distanceX,double distanceY);
+	public abstract void run(double x,double y);
 }

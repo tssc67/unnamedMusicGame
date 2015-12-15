@@ -40,4 +40,9 @@ public class Generator {
 			object.inverseAlpha ^= true;
 		}
 	}
+	public static void rotateAll(Drawable[] objects, float x,float y,float z){
+		for(Drawable object:objects){
+			object.rotation.add(x,y,z);
+		}
+	}
 }

@@ -46,6 +46,7 @@ public class Menu implements Scene{
 		Audio.load("Intro", "/audios/intro.wav");
 		Audio.play("Intro");
 		head = Generator.StringQuadGenerator("in_the_Box", 100f, 100, 100, 0,true);
+		g.cam.yaw=180;
 		pressEnter = Generator.StringQuadGenerator("Press enter to enjoy!!", 0.4f, -2.5f, -2, -2,false);
 		logo = Generator.normalQuad();
 		logo.put(-1.5f, -1.5f,0f,3 , 3);
@@ -95,7 +96,9 @@ public class Menu implements Scene{
 		startGame = (GLFW.glfwGetTime() - startingTime) > startDelay && started;
 		if(startGame){
 			Game.instance.eng.input.keyRegister.clear();
+			Audio.soundSystem.fadeOut("Intro", null, 2000);
 		}
+		
 		return startGame;
 	}
 

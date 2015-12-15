@@ -5,7 +5,7 @@ public abstract class KeyCallback {
 	public int key;
 	public int mod;
 	public enum	ActionType{
-		HOLD,KEYDOWN,KEYUP
+		HOLD,KEYDOWN,KEYUP,SHIFT
 	}
 	public abstract void run();
 }

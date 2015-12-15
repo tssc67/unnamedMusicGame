@@ -40,7 +40,9 @@ public class Engine implements Runnable {
 			}
 		});
 		input.cursorRegister.add(new CursorCallback() {
-
+			{
+				actionType = ActionType.MOVE;
+			}
 			@Override
 			public void run(double distanceX, double distanceY) {
 				distanceX*=0.2;
@@ -52,6 +54,14 @@ public class Engine implements Runnable {
 				} else
 					g.cam.pitch -= distanceY;
 				g.cam.yaw -= distanceX;
+			}
+		});
+		input.cursorRegister.add(new CursorCallback() {
+			{
+				actionType = ActionType.CLICK;
+			}
+			@Override
+			public void run(double x, double y) {
 			}
 		});
 		glfwSetInputMode(g.getWindow(), GLFW_CURSOR, GLFW.GLFW_CURSOR_DISABLED);

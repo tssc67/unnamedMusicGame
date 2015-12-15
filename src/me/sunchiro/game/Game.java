@@ -29,6 +29,7 @@ public class Game {
 			current.init(eng.getGraphic());
 			while (!eng.isDestroyed()) {
 				eng.wait();
+				Audio.soundSystem.checkFadeVolumes();
 				if(current.update()){
 					current = current.next();
 					if(current==null)break;

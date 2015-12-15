@@ -14,5 +14,6 @@
 	<classpathentry kind="lib" path="SoundSystem.jar" sourcepath="C:/Users/teera/Downloads/SoundSystem/src"/>
 	<classpathentry kind="lib" path="CodecWav.jar"/>
 	<classpathentry kind="lib" path="LibraryJavaSound.jar"/>
+	<classpathentry kind="lib" path="LibraryLWJGLOpenAL.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

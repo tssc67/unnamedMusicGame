@@ -57,15 +57,17 @@ public class Graphic {
 	public static Graphic instance;
 	public Vector3f eye = new Vector3f(1, 1, 1);
 	public Vector3f look = new Vector3f(0, 0, 0);
-	private int vertexCount = 0;
+	public int vertexCount = 0;
 	private int indicesCount = 0;
 	public int tid;
 	public int tid_charmap;
+	public Vector3f bgColor = new Vector3f(0.22f, 0.23f, 0.25f);
 	ByteBuffer vertByteBuff;
 	int vaoId = 0;
 	int vboId = 0;
 	int vboiId = 0;
-	public float allScale =1;
+	public float allScale = 1;
+
 	public Graphic() {
 		shader = new Shader();
 		texManager = new TextureManager();
@@ -110,7 +112,7 @@ public class Graphic {
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glDepthFunc(GL11.GL_LESS);
 
-		GL11.glClearColor(0.22f, 0.23f, 0.25f, 0f);
+		GL11.glClearColor(bgColor.x,bgColor.y,bgColor.z,0);
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, width, height);
 		matBuff = BufferUtils.createFloatBuffer(16);
@@ -129,21 +131,21 @@ public class Graphic {
 		}
 	}
 
-	public void addObject(Drawable object) {
+	public synchronized  void addObject(Drawable object) {
 		objects.add(object);
 		vertexCount += object.getVertex().length;
 		indicesCount += object.getIndices().length;
 		invalidate();
 	}
 
-	public void addOrthoObject(Drawable object) {
+	public synchronized  void addOrthoObject(Drawable object) {
 		orthoObjects.add(object);
 		vertexCount += object.getVertex().length;
 		indicesCount += object.getIndices().length;
 		invalidate();
 	}
 
-	public void addObjects(Drawable[] objectArray) {
+	public synchronized void addObjects(Drawable[] objectArray) {
 		for (Drawable object : objectArray) {
 			vertexCount += object.getVertex().length;
 			indicesCount += object.getIndices().length;
@@ -152,7 +154,7 @@ public class Graphic {
 		invalidate();
 	}
 
-	public void addOrthoObjects(Drawable[] objectArray) {
+	public synchronized void addOrthoObjects(Drawable[] objectArray) {
 		for (Drawable object : objectArray) {
 			vertexCount += object.getVertex().length;
 			indicesCount += object.getIndices().length;
@@ -161,14 +163,14 @@ public class Graphic {
 		invalidate();
 	}
 
-	public void removeObject(Drawable object) {
+	public synchronized  void removeObject(Drawable object) {
 		vertexCount -= object.getVertex().length;
 		indicesCount -= object.getIndices().length;
 		objects.remove(object);
 		invalidate();
 	}
 
-	public void clearScene() {
+	public synchronized void clearScene() {
 		objects = new LinkedList<Drawable>();
 		orthoObjects = new LinkedList<Drawable>();
 		vertexCount = 0;
@@ -216,7 +218,7 @@ public class Graphic {
 
 	public void testQuad() {
 		String l = "YEAHHH SUCH STRING,MUCH AWESOME";
-		CharQuad quads[] = Generator.StringQuadGenerator(l, 20, 10, 10, 0,true);
+		CharQuad quads[] = Generator.StringQuadGenerator(l, 20, 10, 10, 0, true);
 		addOrthoObjects(quads);
 		Vertex v0 = new Vertex();
 		Vertex v1 = new Vertex();
@@ -253,7 +255,7 @@ public class Graphic {
 		render();
 	}
 
-	private void logic() {
+	private synchronized void logic() {
 		if (invalidated) {
 			invalidated = false;
 			resizeBuffer();
@@ -284,6 +286,7 @@ public class Graphic {
 	}
 
 	private void render() {
+		GL11.glClearColor(bgColor.x,bgColor.y,bgColor.z,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL20.glUseProgram(shader.getPID());
 		//
@@ -308,24 +311,24 @@ public class Graphic {
 			Matrix4f finalMVP = new Matrix4f(mvpMat);
 			Matrix4f modelMat = new Matrix4f();
 			Matrix4f scaler = new Matrix4f();
-			scaler.scale(object.scale*allScale);
+			scaler.scale(object.scale * allScale);
 			modelMat.translate(object.translation);
-			 modelMat.rotateXYZ(object.rotation.x,object.rotation.y,object.rotation.z);
+			modelMat.rotateXYZ(object.rotation.x, object.rotation.y, object.rotation.z);
 			finalMVP.mul(modelMat);
 			finalMVP.mul(scaler);
 			finalMVP.get(0, matBuff);
-			if(object.isChar){
+			if (object.isChar) {
 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
 			}
 			GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
-			GL20.glUniform1i(shader.getInverseLocation(), object.inverseAlpha?1:0);
+			GL20.glUniform1i(shader.getInverseLocation(), object.inverseAlpha ? 1 : 0);
 			if (object.isVisible())
 				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
 						offset, shift);
 
 			offset += object.getIndices().length;
 			shift += object.getVertex().length;
-			if(object.isChar){
+			if (object.isChar) {
 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid));
 			}
 		}
@@ -345,12 +348,12 @@ public class Graphic {
 	private void render2d(long offset, int shift) {
 		cam.getOrthoMVP().get(0, matBuff);
 		GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
-		
+
 		for (Drawable object : orthoObjects) {
-			if(object.isChar){
+			if (object.isChar) {
 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
 			}
-			GL20.glUniform1i(shader.getInverseLocation(), object.inverseAlpha?1:0);
+			GL20.glUniform1i(shader.getInverseLocation(), object.inverseAlpha ? 1 : 0);
 			if (object.isVisible())
 				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
 						offset, shift);
