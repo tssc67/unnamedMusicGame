@@ -12,10 +12,10 @@ public class Quad extends Drawable {
 		super(vertexs, new byte[] { 0, 1, 2, 2, 3, 0 });
 	}
 
-	public void put(float x, float y, float z, float width, float height) {
+	public void put(float x, float y, float z, float width, float h,boolean isOrtho) {
 		vertexs[0].setXYZ(x, y, z);
-		vertexs[1].setXYZ(x, y + height, z);
-		vertexs[2].setXYZ(x + width, y + height, z);
+		vertexs[1].setXYZ(x, y +(isOrtho ? h : -h), z);
+		vertexs[2].setXYZ(x + width, y + (isOrtho ? h : -h), z);
 		vertexs[3].setXYZ(x + width, y, z);
 	}
 

@@ -49,7 +49,7 @@ public class Menu implements Scene{
 		g.cam.yaw=180;
 		pressEnter = Generator.StringQuadGenerator("Press enter to enjoy!!", 0.4f, -2.5f, -2, -2,false);
 		logo = Generator.normalQuad();
-		logo.put(-1.5f, -1.5f,0f,3 , 3);
+		logo.put(-1.5f, -1.5f,0f,3 , 3,true);
 		logo.translation.y = -3;
 		logo.translation.z = 1;
 		logo.rotation.x=MathUtil.toRadian(90);

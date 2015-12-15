@@ -13,6 +13,7 @@ import de.matthiasmann.twl.renderer.Texture;
 import de.matthiasmann.twl.textarea.TextAreaModel.Clear;
 import me.sunchiro.game.Game;
 import me.sunchiro.game.Player;
+import me.sunchiro.game.engine.al.Audio;
 import me.sunchiro.game.engine.gl.Camera;
 import me.sunchiro.game.engine.gl.Generator;
 import me.sunchiro.game.engine.gl.Graphic;
@@ -23,6 +24,7 @@ import me.sunchiro.game.engine.gl.object.Quad;
 import me.sunchiro.game.engine.gl.object.Vertex;
 import me.sunchiro.game.engine.input.InputManager;
 import me.sunchiro.game.engine.input.KeyCallback;
+import paulscode.sound.SoundSystemConfig;
 
 public class Ingame implements Scene {
 	private Player player;
@@ -42,18 +44,21 @@ public class Ingame implements Scene {
 	public Queue<Bullet> bullets;
 	public float room = 30.0f;
 	public Quad playerFace;
-	public float stamina=2.0f;
+	public float stamina = 2.0f;
 	public boolean isRunning = false;
 	public float bulletWidth = 0.3f;
+	public float life = 1.0f;
+
 	@Override
 	public void init(Graphic g) {
+		Audio.load("hit", "/audios/HitSound.wav");
 		bullets = new LinkedList<Bullet>();
 		input = Game.instance.eng.input;
 		bg = Generator.normalQuad();
 		this.g = g;
 		g.clearScene();
 		events = new PriorityQueue<timeEvent>();
-		bg.put(0, 0, -50, 4000, 4000);
+		bg.put(0, 0, -50, 4000, 4000, true);
 		bg.mapTexture(new Vector2f(0.75f, 0.75f), new Vector2f(1, 1));
 		bg.setAllRGBA(new float[] { 0, 0, 0, 1 });
 		g.addOrthoObject(bg);
@@ -97,10 +102,13 @@ public class Ingame implements Scene {
 		moveBullets();
 		eventCheck();
 		movePlayer();
-		g.cam.eye = player.loc;
+		g.cam.eye.set(player.loc);
+		g.cam.eye.y += 0.5f;
+		if (playerFace != null)
+			playerFace.setAllRGBA(new float[] { life, life, life, 1 });
 		return false;
 	}
-	
+
 	@Override
 	public Scene next() {
 		return null;
@@ -121,7 +129,7 @@ public class Ingame implements Scene {
 	public void startGame() {
 		g.tid = 2;
 		g.clearScene();
-		
+
 		// simpleCube = Generator.normalCube();
 		// simpleCube.put(-0.5f, -0.5f, -0.5f, 1, 1, 1);
 		// simpleCube.mapTexture(new Vector2f(0, 0), new Vector2f(6 / 16f, 1 /
@@ -130,7 +138,7 @@ public class Ingame implements Scene {
 		float faceWidth = 150;
 		playerFace = Generator.normalQuad();
 		// playerFace.put(0, 0, 0, 100, 100);
-		playerFace.put(g.getWidth() / 2 - faceWidth / 2, g.getHeight() - faceWidth, 0, faceWidth, faceWidth);
+		playerFace.put(g.getWidth() / 2 - faceWidth / 2, g.getHeight() - faceWidth, 0, faceWidth, faceWidth, true);
 		playerFace.mapTexture(new Vector2f(0, 2 / 16f), new Vector2f(1 / 16f, 3 / 16f));
 		g.addOrthoObject(playerFace);
 		enemy = new Cube[1900];
@@ -264,6 +272,7 @@ public class Ingame implements Scene {
 			@Override
 			public void run() {
 				isRunning = true;
+				fire(0);
 			}
 
 		});
@@ -281,9 +290,32 @@ public class Ingame implements Scene {
 		});
 
 	}
-	public void moveBullets(){
-		
+
+	public void moveBullets() {
+		int bulletCount = bullets.size();
+		if (bulletCount == 0)
+			return;
+		Bullet cur;
+		for (int i = 0; i < bulletCount; i++) {
+			cur = bullets.poll();
+			if (new Vector3f(cur.quad.translation).sub(player.loc).length() < bulletWidth) {
+				Audio.soundSystem.quickPlay(true, Audio.class.getResource("/audios/HitSound.wav"), "HitSound.wav",
+						false, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
+				life -= .1f;
+				if (life < 0.1f) {
+					lose();
+				}
+			}
+			cur.quad.translation.add(cur.v);
+
+			if (cur.quad.translation.y < 0) {
+				// g.removeObject(cur.quad);
+			} else {
+				bullets.add(cur);
+			}
+		}
 	}
+
 	public void movePlayer() {
 		Vector3f diff = new Vector3f(player.velocity);
 		diff.add(accel);
@@ -298,16 +330,18 @@ public class Ingame implements Scene {
 			diff.z -= diff.z < 0 ? -deceleration.z : deceleration.z;
 		}
 		stamina += 0.002f;
-		float finalMaxspeed =maxSpeed;
+		float finalMaxspeed = maxSpeed;
 		float maxStamina = 0.4f;
-		if(stamina>maxStamina)stamina = maxStamina;
-		if(isRunning){
+		if (stamina > maxStamina)
+			stamina = maxStamina;
+		if (isRunning) {
 			finalMaxspeed = maxSpeed + stamina;
 			stamina -= 0.004;
-			if(stamina<0) stamina = 0;
+			if (stamina < 0)
+				stamina = 0;
 		}
-		float stamRate = stamina/maxStamina;
-		g.bgColor.set(stamRate*0.8f,stamRate*0.8f,stamRate*0.8f);
+		float stamRate = stamina / maxStamina;
+		g.bgColor.set(stamRate * 0.8f, stamRate * 0.8f, stamRate * 0.8f);
 		diff.y = 0;
 		if (diff.length() > finalMaxspeed) {
 			diff.normalize().mul(finalMaxspeed);
@@ -334,23 +368,40 @@ public class Ingame implements Scene {
 		if (player.loc.z > room)
 			player.loc.z = room;
 	}
-	public void fire(int boxId,Vector3f velocity){
+
+	public void fire(int boxId, Vector3f velocity) {
 		Quad q = Generator.normalQuad();
-		q.put(0, 0, 0, bulletWidth, bulletWidth);
-		q.mapTexture(new Vector2f(0.5f,0f), new Vector2f(0.75f,0.25f));
+		q.put(0, 0, 0, bulletWidth, bulletWidth, false);
+		q.mapTexture(new Vector2f(3 / 16f, 1 / 16f), new Vector2f(4 / 16f, 2 / 16f));
+		q.translation.add(enemy[boxId].translation);
 		bullets.add(new Bullet(q, velocity));
+		g.addObject(q);
 	}
-	public void fire(int boxId){
-		fire(boxId,new Vector3f().add(player.loc).sub(enemy[boxId].translation).normalize().mul(1));
+
+	public void fire(int boxId) {
+		fire(boxId, new Vector3f().add(player.loc).sub(enemy[boxId].translation).normalize().mul(0.3f));
+	}
+
+	CharQuad[] youLose;
+
+	public void lose() {
+		g.clearScene();
+		youLose = Generator.StringQuadGenerator("You lose Orz",120, 10,200, 0, true);
+		g.addOrthoObject(bg);
+		g.addOrthoObjects(youLose);
 	}
 }
+
 class Bullet {
 	Quad quad;
 	public Vector3f v;
-	public Bullet(Quad quad,Vector3f velocity){
+
+	public Bullet(Quad quad, Vector3f velocity) {
 		this.quad = quad;
+		this.v = velocity;
 	}
 }
+
 abstract class timeEvent implements Comparable<timeEvent> {
 	double time = 0;
 
