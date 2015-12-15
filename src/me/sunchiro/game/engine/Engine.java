@@ -24,7 +24,8 @@ public class Engine implements Runnable {
 		g.createWindow(ConfigurationOption.screenWidth, ConfigurationOption.screenHeight,
 				ConfigurationOption.titleName);
 		g.loadTexture(new String[]{
-			"/textures/menuTexture.png"
+			"/textures/menuTexture.png",
+			"/textures/ingame.png"
 		});
 		input = new InputManager(g.getWindow());
 		Audio.init();

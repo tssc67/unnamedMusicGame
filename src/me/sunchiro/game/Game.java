@@ -9,7 +9,7 @@ public class Game {
 	public Engine eng;
 	private Thread engineThread;
 	Scene current;
-	Player player;
+	public Player player;
 	public static Game instance;
 	public Game() {
 		Game.instance = this;
@@ -23,6 +23,7 @@ public class Game {
 
 	public synchronized void mainLogic() {
 		try {
+			player = new Player();
 			engineThread.start();
 			eng.wait();
 			current.init(eng.getGraphic());

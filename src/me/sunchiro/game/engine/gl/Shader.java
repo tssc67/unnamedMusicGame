@@ -11,6 +11,7 @@ class Shader {
 	private int pId = 0;
 	private int mvpMatLocation = 0;
 	private int orthoMatLocation = 0;
+	private int inverseLocation = 0;
 	public void setupShader() {
 		int errorCheckValue = GL11.glGetError();
 		vsId = this.loadShader("/shaders/quad/vertex.glsl", GL20.GL_VERTEX_SHADER);
@@ -30,6 +31,7 @@ class Shader {
 		GL20.glValidateProgram(pId);
 
 		mvpMatLocation = GL20.glGetUniformLocation(pId, "mvpMatrix");
+		inverseLocation = GL20.glGetUniformLocation(pId, "inverseAlpha");
 		errorCheckValue = GL11.glGetError();
 		if (errorCheckValue != GL11.GL_NO_ERROR) {
 			System.out.println("ERROR - Could not create the shaders");
@@ -79,5 +81,8 @@ class Shader {
 	}
 	public int getOrthoMatLocation(){
 		return orthoMatLocation;
+	}
+	public int getInverseLocation(){
+		return inverseLocation;
 	}
 }

@@ -14,6 +14,7 @@ public abstract class Drawable{
 	public int size;
 	public boolean markAsRemove = false;
 	public boolean isChar = false;
+	public boolean inverseAlpha = false;
 	protected Drawable(){
 		
 	}
@@ -36,6 +37,11 @@ public abstract class Drawable{
 	public void store(FloatBuffer buff){
 		for(int i=0;i<size;i++){
 			buff.put(vertexs[i].getElements());
+		}
+	}
+	public void setAllRGBA(float[] rgba){
+		for(Vertex vertex:vertexs){
+			vertex.setRGBA(rgba);
 		}
 	}
 }

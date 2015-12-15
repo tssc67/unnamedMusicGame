@@ -65,7 +65,7 @@ public class Graphic {
 	int vaoId = 0;
 	int vboId = 0;
 	int vboiId = 0;
-
+	public float allScale =1;
 	public Graphic() {
 		shader = new Shader();
 		texManager = new TextureManager();
@@ -299,7 +299,7 @@ public class Graphic {
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
 		long offset = 0;
 		int shift = 0;
-		GL11.glAlphaFunc(GL11.GL_GREATER, 0.01f);
+		GL11.glAlphaFunc(GL11.GL_GREATER, 0.4f);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
@@ -308,16 +308,17 @@ public class Graphic {
 			Matrix4f finalMVP = new Matrix4f(mvpMat);
 			Matrix4f modelMat = new Matrix4f();
 			Matrix4f scaler = new Matrix4f();
-			scaler.scale(object.scale);
+			scaler.scale(object.scale*allScale);
 			modelMat.translate(object.translation);
 			 modelMat.rotateXYZ(object.rotation.x,object.rotation.y,object.rotation.z);
-			finalMVP.mul(scaler);
 			finalMVP.mul(modelMat);
+			finalMVP.mul(scaler);
 			finalMVP.get(0, matBuff);
 			if(object.isChar){
 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
 			}
 			GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
+			GL20.glUniform1i(shader.getInverseLocation(), object.inverseAlpha?1:0);
 			if (object.isVisible())
 				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
 						offset, shift);
@@ -349,6 +350,7 @@ public class Graphic {
 			if(object.isChar){
 				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
 			}
+			GL20.glUniform1i(shader.getInverseLocation(), object.inverseAlpha?1:0);
 			if (object.isVisible())
 				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
 						offset, shift);

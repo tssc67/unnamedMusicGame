@@ -2,6 +2,7 @@ package me.sunchiro.game.engine.gl;
 
 import me.sunchiro.game.engine.gl.object.CharQuad;
 import me.sunchiro.game.engine.gl.object.Cube;
+import me.sunchiro.game.engine.gl.object.Drawable;
 import me.sunchiro.game.engine.gl.object.Quad;
 import me.sunchiro.game.engine.gl.object.Vertex;
 
@@ -33,5 +34,10 @@ public class Generator {
 	public static Cube normalCube() {
 		return new Cube(new Vertex[] { new Vertex(), new Vertex(), new Vertex(), new Vertex(), new Vertex(),
 				new Vertex(), new Vertex(), new Vertex() });
+	}
+	public static void inverseAlpha(Drawable[] objects){
+		for(Drawable object:objects){
+			object.inverseAlpha ^= true;
+		}
 	}
 }
