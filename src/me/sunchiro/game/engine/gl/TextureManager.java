@@ -18,7 +18,7 @@ public class TextureManager {
 	public int getTexture(int id) {
 		return textures.get(id);
 	}
-	public int loadTexture(String filename, int textureUnit) {
+	public synchronized int loadTexture(String filename, int textureUnit) {
 		ByteBuffer buff = null;
 		int tWidth = 0;
 		int tHeight = 0;

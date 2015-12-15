@@ -2,12 +2,18 @@ package me.sunchiro.game.engine.gl.object;
 
 import java.nio.FloatBuffer;
 
+import org.joml.Vector3f;
+
 public abstract class Drawable{
 	protected Vertex[] vertexs;
 	protected byte[] indices;
 	private boolean visible = true;
+	public Vector3f translation = new Vector3f();
+	public Vector3f rotation = new Vector3f();
+	public float scale = 1.0f;
 	public int size;
 	public boolean markAsRemove = false;
+	public boolean isChar = false;
 	protected Drawable(){
 		
 	}

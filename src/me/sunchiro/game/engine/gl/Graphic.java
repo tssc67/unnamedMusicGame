@@ -30,12 +30,10 @@ import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 
 import me.sunchiro.game.engine.gl.object.*;
-import me.sunchiro.game.engine.resource.ResourceManager;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
-import java.awt.Font;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -45,12 +43,12 @@ public class Graphic {
 	private GLFWErrorCallback errorCallback;
 	private GLFWWindowSizeCallback windowSizeCalback;
 	private boolean FBOEnabled;
+	private boolean invalidated = false;
 	private int width;
 	private int height;
 	private long window;
-	private ResourceManager res;
 	public Shader shader;
-	public TextureManager texManager;
+	private TextureManager texManager;
 	public Camera cam;
 	private Matrix4f mvpMat;
 	private FloatBuffer matBuff = null;
@@ -61,18 +59,21 @@ public class Graphic {
 	public Vector3f look = new Vector3f(0, 0, 0);
 	private int vertexCount = 0;
 	private int indicesCount = 0;
-	int tid;
-	int tid_charmap;
+	public int tid;
+	public int tid_charmap;
 	ByteBuffer vertByteBuff;
 	int vaoId = 0;
 	int vboId = 0;
 	int vboiId = 0;
 
-	public Graphic(ResourceManager res) {
-		this.res = res;
+	public Graphic() {
 		shader = new Shader();
 		texManager = new TextureManager();
 		cam = new Camera();
+	}
+
+	public void invalidate() {
+		invalidated = true;
 	}
 
 	public void createWindow(int width, int height, String name) {
@@ -109,32 +110,37 @@ public class Graphic {
 		GL11.glEnable(GL11.GL_ALPHA_TEST);
 		GL11.glDepthFunc(GL11.GL_LESS);
 
-		GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
+		GL11.glClearColor(0.22f, 0.23f, 0.25f, 0f);
 		// Map the internal OpenGL coordinate system to the entire screen
 		GL11.glViewport(0, 0, width, height);
 		matBuff = BufferUtils.createFloatBuffer(16);
 		vaoId = GL30.glGenVertexArrays();
 		vboiId = GL15.glGenBuffers();
 		vboId = GL15.glGenBuffers();
-		tid = texManager.loadTexture("/textures/alignBox.png", GL13.GL_TEXTURE0);
 		tid_charmap = texManager.loadTexture("/textures/charmap.png", GL13.GL_TEXTURE0);
 		shader.setupShader();
-		testQuad();
+		// testQuad();
 
+	}
+
+	public void loadTexture(String[] filename) {
+		for (String file : filename) {
+			texManager.loadTexture(file, GL13.GL_TEXTURE0);
+		}
 	}
 
 	public void addObject(Drawable object) {
 		objects.add(object);
 		vertexCount += object.getVertex().length;
 		indicesCount += object.getIndices().length;
-		resizeBuffer();
+		invalidate();
 	}
 
 	public void addOrthoObject(Drawable object) {
 		orthoObjects.add(object);
 		vertexCount += object.getVertex().length;
 		indicesCount += object.getIndices().length;
-		resizeBuffer();
+		invalidate();
 	}
 
 	public void addObjects(Drawable[] objectArray) {
@@ -143,7 +149,7 @@ public class Graphic {
 			indicesCount += object.getIndices().length;
 			objects.add(object);
 		}
-		resizeBuffer();
+		invalidate();
 	}
 
 	public void addOrthoObjects(Drawable[] objectArray) {
@@ -152,10 +158,28 @@ public class Graphic {
 			indicesCount += object.getIndices().length;
 			orthoObjects.add(object);
 		}
-		resizeBuffer();
+		invalidate();
 	}
 
-	public void removeObject() {
+	public void removeObject(Drawable object) {
+		vertexCount -= object.getVertex().length;
+		indicesCount -= object.getIndices().length;
+		objects.remove(object);
+		invalidate();
+	}
+
+	public void clearScene() {
+		objects = new LinkedList<Drawable>();
+		orthoObjects = new LinkedList<Drawable>();
+		vertexCount = 0;
+		indicesCount = 0;
+	}
+
+	public void removeOrthoObject(Drawable object) {
+		vertexCount -= object.getVertex().length;
+		indicesCount -= object.getIndices().length;
+		orthoObjects.remove(object);
+		invalidate();
 	}
 
 	public void resizeBuffer() {
@@ -188,39 +212,12 @@ public class Graphic {
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
 
-	public void testQuad() {
-		String l = "FUCK THIS SHIT I'M OUT";
-		int left = 0;
-		for(int i=0;i<l.length();i++){
-			System.out.println(CharQuad.getCharWidth(l.charAt(i)));
-			float width =20f  * CharQuad.getCharWidth(l.charAt(i));
-			Vertex v0 = new Vertex();
-			Vertex v1 = new Vertex();
-			Vertex v2 = new Vertex();
-			Vertex v3 = new Vertex();
-			v0.setUV(0, 0);
-			v1.setUV(0, 1);
-			v2.setUV(1, 1);
-			v3.setUV(1, 0);
-			v0.setXYZ(left, 0, 0);
-			v1.setXYZ(left, 25, 0);
-			v2.setXYZ(left+width, 25, 0);
-			v3.setXYZ(left+width, 0, 0);
-			float col = (float)Math.random();
-			float col2 = (float)Math.random();
-			float col3 = (float)Math.random();
-			
-			v0.setRGBA(col,col2,col3,1);
-			v1.setRGBA(col,col2,col3,1);
-			v2.setRGBA(col,col2,col3,1);
-			v3.setRGBA(col,col2,col3,1);
-			Vertex[] vertexs = new Vertex[] { v0, v1, v2, v3 };
-			CharQuad chr = new CharQuad(vertexs);
-			chr.setCharacter(l.charAt(i));
-			addOrthoObject(chr);
-			left+=width;
-		}
+	public Cube cube;
 
+	public void testQuad() {
+		String l = "YEAHHH SUCH STRING,MUCH AWESOME";
+		CharQuad quads[] = Generator.StringQuadGenerator(l, 20, 10, 10, 0,true);
+		addOrthoObjects(quads);
 		Vertex v0 = new Vertex();
 		Vertex v1 = new Vertex();
 		Vertex v2 = new Vertex();
@@ -238,7 +235,7 @@ public class Graphic {
 		v5.setXYZ(-1.5f, 0.5f, -1f);
 		v6.setXYZ(-0.5f, 0.5f, -1f);
 		v7.setXYZ(-0.5f, 1.5f, -1f);
-		Cube cube = new Cube(new Vertex[] { v0, v1, v2, v3, v4, v5, v6, v7 });
+		cube = new Cube(new Vertex[] { v0, v1, v2, v3, v4, v5, v6, v7 });
 		cube.mapTexture(new Vector2f(0, 0f), new Vector2f(1, 1 / 8f));
 		addObject(cube);
 	}
@@ -249,7 +246,6 @@ public class Graphic {
 
 	public void destroy() {
 		shader.destroy();
-
 	}
 
 	public void draw() {
@@ -258,9 +254,13 @@ public class Graphic {
 	}
 
 	private void logic() {
-
+		if (invalidated) {
+			invalidated = false;
+			resizeBuffer();
+		}
 		mvpMat = cam.getMVP();
-
+		if (vertexCount == 0)
+			return;
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 		int offset = 0;
 		FloatBuffer vertFloatBuff = vertByteBuff.asFloatBuffer();
@@ -275,12 +275,12 @@ public class Graphic {
 		vertFloatBuff.flip();
 		GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, offset, vertByteBuff);
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-		GL20.glUseProgram(shader.getPID());
-		mvpMat.get(0, matBuff);
-		// matBuff.flip();
-		// matBuff.put(0,5.0f);
-		GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
-		GL20.glUseProgram(0);
+		// GL20.glUseProgram(shader.getPID());
+		// mvpMat.get(0, matBuff);
+		// // matBuff.flip();
+		// // matBuff.put(0,5.0f);
+		// GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
+		// GL20.glUseProgram(0);
 	}
 
 	private void render() {
@@ -300,18 +300,35 @@ public class Graphic {
 		long offset = 0;
 		int shift = 0;
 		GL11.glAlphaFunc(GL11.GL_GREATER, 0.01f);
-		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glDisable(GL11.GL_CULL_FACE);
 		GL11.glEnable(GL11.GL_BLEND);
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
 		for (Drawable object : objects) {
+			Matrix4f finalMVP = new Matrix4f(mvpMat);
+			Matrix4f modelMat = new Matrix4f();
+			Matrix4f scaler = new Matrix4f();
+			scaler.scale(object.scale);
+			modelMat.translate(object.translation);
+			 modelMat.rotateXYZ(object.rotation.x,object.rotation.y,object.rotation.z);
+			finalMVP.mul(scaler);
+			finalMVP.mul(modelMat);
+			finalMVP.get(0, matBuff);
+			if(object.isChar){
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
+			}
+			GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
 			if (object.isVisible())
 				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
 						offset, shift);
 
 			offset += object.getIndices().length;
 			shift += object.getVertex().length;
+			if(object.isChar){
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid));
+			}
 		}
-		render2d(offset,shift);
+		render2d(offset, shift);
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
 		GL20.glDisableVertexAttribArray(0);
 		GL20.glDisableVertexAttribArray(1);
@@ -324,18 +341,21 @@ public class Graphic {
 
 	}
 
-	private void render2d(long offset,int shift) {
+	private void render2d(long offset, int shift) {
 		cam.getOrthoMVP().get(0, matBuff);
 		GL20.glUniformMatrix4fv(shader.getMVPLocation(), false, matBuff);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
-		for(Drawable object: orthoObjects){
-			if(object.isVisible())
+		
+		for (Drawable object : orthoObjects) {
+			if(object.isChar){
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, texManager.getTexture(tid_charmap));
+			}
+			if (object.isVisible())
 				GL32.glDrawElementsBaseVertex(GL11.GL_TRIANGLES, object.getIndices().length, GL11.GL_UNSIGNED_BYTE,
 						offset, shift);
 			offset += object.getIndices().length;
 			shift += object.getVertex().length;
 		}
-		//static utility function
+		// static utility function
 	}
 
 	private GLFWWindowSizeCallback resizeCallback() {

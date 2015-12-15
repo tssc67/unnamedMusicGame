@@ -11,5 +11,8 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="TWL.jar"/>
+	<classpathentry kind="lib" path="SoundSystem.jar" sourcepath="C:/Users/teera/Downloads/SoundSystem/src"/>
+	<classpathentry kind="lib" path="CodecWav.jar"/>
+	<classpathentry kind="lib" path="LibraryJavaSound.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
