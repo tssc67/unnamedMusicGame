@@ -123,7 +123,12 @@ public class Ingame implements Scene {
 		g.tid = 2;
 		g.clearScene();
 		effQ = new LinkedList<Effect>();
-		loadTempo("/tempo/ratherbe.txt");
+		try {
+			loadTempo("/tempo/ratherbe.txt");
+		} catch (TempoLoadingException e) {//My exception
+			System.out.println("Fail loading Tempo");
+			e.printStackTrace();
+		}
 		bulletsInstance = new LinkedList<Bullet>();
 		events.add(new timeEvent() {
 			{
@@ -541,7 +546,7 @@ public class Ingame implements Scene {
 		}
 	}
 
-	public void loadTempo(String filename) {
+	public void loadTempo(String filename) throws TempoLoadingException {
 		BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(filename)));
 		StringBuilder out = new StringBuilder();
 		String line;
@@ -550,16 +555,21 @@ public class Ingame implements Scene {
 				out.append(line);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			throw new TempoLoadingException(e);
 		}
 		String[] tempos = out.toString().split(",");
 		int i = 0;
 		for (String tempo : tempos) {
 			String[] duet = tempo.split(":");
-			float time = Float.parseFloat(duet[0]);
-			int action = Integer.parseInt(duet[1]);
-			effQ.add(new Effect(time, action));
+			try{
+				float time = Float.parseFloat(duet[0]);
+				int action = Integer.parseInt(duet[1]);
+				effQ.add(new Effect(time, action));
+			}catch(Exception e){
+				e.printStackTrace();
+				throw new TempoLoadingException("Wrong file format!");
+			}
 			i++;
 		}
 	}
@@ -599,7 +609,16 @@ public class Ingame implements Scene {
 		});
 	}
 }
-
+class TempoLoadingException extends Exception{
+		public TempoLoadingException(){
+		}
+		public TempoLoadingException(String message){
+			super(message);
+		}
+		public TempoLoadingException(Throwable cause){
+			super(cause);
+		}
+}
 class Effect {
 	public float time;
 	public int action;
