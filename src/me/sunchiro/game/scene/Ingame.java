@@ -1,5 +1,11 @@
 package me.sunchiro.game.scene;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.LinkedList;
 import java.util.PriorityQueue;
 import java.util.Queue;
@@ -13,6 +19,7 @@ import de.matthiasmann.twl.renderer.Texture;
 import de.matthiasmann.twl.textarea.TextAreaModel.Clear;
 import me.sunchiro.game.Game;
 import me.sunchiro.game.Player;
+import me.sunchiro.game.engine.ConfigurationOption;
 import me.sunchiro.game.engine.al.Audio;
 import me.sunchiro.game.engine.gl.Camera;
 import me.sunchiro.game.engine.gl.Generator;
@@ -40,18 +47,33 @@ public class Ingame implements Scene {
 	public Vector3f deceleration = new Vector3f(0.01f, 0.0051f, 0.01f);
 	public float maxSpeed = 0.1f;
 	public Vector3f accel;
-	public Cube[] enemy;
+	public Enemy[] enemy;
 	public Queue<Bullet> bullets;
+	public Queue<Bullet> bulletsInstance;
+	public Queue<Effect> effQ;
 	public float room = 30.0f;
 	public Quad playerFace;
 	public float stamina = 2.0f;
 	public boolean isRunning = false;
+	public boolean shaking = false;
 	public float bulletWidth = 0.3f;
 	public float life = 1.0f;
+
+	public boolean lose = false;
+	public boolean started = false;
+
+	@Override
+	public Scene next() {
+		g.clearScene();
+		Audio.soundSystem.stop("ratherbe");
+		g.cam.eye.set(0,0,1);
+		return new Menu();
+	}
 
 	@Override
 	public void init(Graphic g) {
 		Audio.load("hit", "/audios/HitSound.wav");
+		Audio.load("ratherbe", "/audios/music.wav");
 		bullets = new LinkedList<Bullet>();
 		input = Game.instance.eng.input;
 		bg = Generator.normalQuad();
@@ -64,7 +86,7 @@ public class Ingame implements Scene {
 		g.addOrthoObject(bg);
 		survive = Generator.StringQuadGenerator("SURVIVE!", 80, 100, 100, 0, true);
 		keepMovin = Generator.StringQuadGenerator("KEEP MOVIN!", 80, 100, 200, 0, true);
-		andShoot = Generator.StringQuadGenerator("AND SHOOT!!", 80, 100, 300, 0, true);
+		andShoot = Generator.StringQuadGenerator(":)", 80, 100, 300, 0, true);
 		for (int i = 0; i < survive.length; i++) {
 			survive[i].setAllRGBA(new float[] { 1, 0, 0, 1 });
 			survive[i].inverseAlpha = true;
@@ -85,72 +107,61 @@ public class Ingame implements Scene {
 		marker = GLFW.glfwGetTime();
 		events.add(new timeEvent() {
 			{
-				time = 3.0;
+				time = 3.0; 
 			}
 
 			@Override
 			public void run() {
 				startGame();
+				started = true;
 			}
 		});
 		accel = new Vector3f();
 	}
 
-	@Override
-	public boolean update() {
-		// TODO Auto-generated method stub
-		moveBullets();
-		eventCheck();
-		movePlayer();
-		g.cam.eye.set(player.loc);
-		g.cam.eye.y += 0.5f;
-		if (playerFace != null)
-			playerFace.setAllRGBA(new float[] { life, life, life, 1 });
-		return false;
-	}
-
-	@Override
-	public Scene next() {
-		return null;
-	}
-
-	public double time() {
-		return GLFW.glfwGetTime() - marker;
-	}
-
-	public void eventCheck() {
-		if (events.size() == 0)
-			return;
-		if (events.peek().time <= time()) {
-			events.poll().run();
-		}
-	}
-
 	public void startGame() {
 		g.tid = 2;
 		g.clearScene();
+		effQ = new LinkedList<Effect>();
+		loadTempo("/tempo/ratherbe.txt");
+		bulletsInstance = new LinkedList<Bullet>();
+		events.add(new timeEvent() {
+			{
+				time = time() + 1;
+			}
 
-		// simpleCube = Generator.normalCube();
-		// simpleCube.put(-0.5f, -0.5f, -0.5f, 1, 1, 1);
-		// simpleCube.mapTexture(new Vector2f(0, 0), new Vector2f(6 / 16f, 1 /
-		// 16f));
-		// g.addObject(simpleCube);
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				Audio.play("ratherbe");
+			}
+		});
+		for (int i = 0; i < 5000; i++) {
+			Quad q = Generator.normalQuad();
+			q.put(0, 0, 0, bulletWidth, bulletWidth, false);
+			q.mapTexture(new Vector2f(3 / 16f, 1 / 16f), new Vector2f(4 / 16f, 2 / 16f));
+			Bullet bull = new Bullet(q, new Vector3f());
+			bulletsInstance.add(bull);
+			q.setVisible(false);
+			g.addObject(bull.quad);
+		}
 		float faceWidth = 150;
 		playerFace = Generator.normalQuad();
-		// playerFace.put(0, 0, 0, 100, 100);
 		playerFace.put(g.getWidth() / 2 - faceWidth / 2, g.getHeight() - faceWidth, 0, faceWidth, faceWidth, true);
 		playerFace.mapTexture(new Vector2f(0, 2 / 16f), new Vector2f(1 / 16f, 3 / 16f));
 		g.addOrthoObject(playerFace);
-		enemy = new Cube[1900];
-		for (int i = 0; i < 1900; i++) {
+		Cube[] enemies = new Cube[ConfigurationOption.objectCount];
+		enemy = new Enemy[ConfigurationOption.objectCount];
+		for (int i = 0; i < ConfigurationOption.objectCount; i++) {
 			float size = 1 + (float) Math.random();
-			enemy[i] = Generator.normalCube();
-			enemy[i].put(-size / 2, -size / 2, -size / 2, size, size, size);
-			enemy[i].mapTexture(new Vector2f(0, 0.0626f), new Vector2f(0.1874f, 0.09374f));
-			enemy[i].translation.add((float) Math.random() * 100 - 50, 5 + (float) (Math.random() * 20),
+			enemies[i] = Generator.normalCube();
+			enemies[i].put(-size / 2, -size / 2, -size / 2, size, size, size);
+			enemies[i].mapTexture(new Vector2f(0, 0.0626f), new Vector2f(0.1874f, 0.09374f));
+			enemies[i].translation.add((float) Math.random() * 100 - 50, -10 + (float) (Math.random() * 20),
 					(float) Math.random() * 100 - 50);
+			enemy[i] = new Enemy(enemies[i]);
 		}
-		g.addObjects(enemy);
+		g.addObjects(enemies);
 		registerMovement();
 	}
 
@@ -259,8 +270,8 @@ public class Ingame implements Scene {
 				if (player.loc.y < 0.01f) {
 					player.velocity.y = accelStep.y;
 				}
-			}
 
+			}
 		});
 		// Sprint
 		input.keyRegister.add(new KeyCallback() {
@@ -272,9 +283,7 @@ public class Ingame implements Scene {
 			@Override
 			public void run() {
 				isRunning = true;
-				fire(0);
 			}
-
 		});
 		input.keyRegister.add(new KeyCallback() {
 			{
@@ -286,9 +295,134 @@ public class Ingame implements Scene {
 			public void run() {
 				isRunning = false;
 			}
-
 		});
+		// SHAKKKKEEE
+		input.keyRegister.add(new KeyCallback() {
+			{
+				key = GLFW.GLFW_KEY_Z;
+				actionType = ActionType.KEYDOWN;
+			}
 
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				shaking = true;
+				record(0);
+			}
+		});
+		input.keyRegister.add(new KeyCallback() {
+			{
+				key = GLFW.GLFW_KEY_Z;
+				actionType = ActionType.KEYUP;
+			}
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				shaking = false;
+				record(0);
+			}
+		});
+		// OUCH! MY EYE
+		input.keyRegister.add(new KeyCallback() {
+			{
+				key = GLFW.GLFW_KEY_X;
+				actionType = ActionType.KEYDOWN;
+			}
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				record(1);
+				flashAll();
+			}
+		});
+		input.keyRegister.add(new KeyCallback() {
+			{
+				key = GLFW.GLFW_KEY_C;
+				actionType = ActionType.KEYDOWN;
+			}
+
+			@Override
+			public void run() {
+				// TODO Auto-generated method stub
+				record(1);
+				flashAll();
+			}
+		});
+	}
+
+	@Override
+	public boolean update() {
+		eventCheck();
+
+		if (!started)
+			return false;
+		System.out.println(!Audio.soundSystem.playing("ratherbe"));
+		if (lose)
+			return true;
+		moveBullets();
+		updateEnemy();
+		movePlayer();
+		g.cam.eye.set(player.loc);
+		g.cam.eye.y += 0.75f;
+		playerFace.setAllRGBA(new float[] { life, life, life, 1 });
+		effect();
+		return false;
+	}
+
+	public double time() {
+		return GLFW.glfwGetTime() - marker;
+	}
+
+	public void eventCheck() {
+		if (events.size() == 0)
+			return;
+		if (events.peek().time <= time()) {
+			events.poll().run();
+		}
+	}
+
+	public void record(int v) {
+		System.out.println(Audio.getTime("ratherbe") + ":" + v + ",");
+	}
+
+	public void effect() {
+		if (effQ.size() > 0) {
+			if (effQ.peek().time <= Audio.getTime("ratherbe")) {
+				int action = effQ.poll().action;
+				// 1 flash //0 shake
+				if (action == 0) {
+					shaking ^= true;
+				}
+				if (action == 1) {
+//					flashAll();
+					shootPossibility(0.01f);
+				}
+				if(action == 2){
+					System.out.println("fuck");
+					win();
+				}
+			}
+		}
+		if (shaking) {
+			g.cam.eye.add((float) Math.random() * 0.1f - 0.05f, (float) Math.random() * 0.1f - 0.05f,
+					(float) Math.random() * 0.1f - 0.05f);
+		}
+	}
+
+	public void updateEnemy() {
+		for (Enemy en : enemy) {
+			if (en.flashing) {
+				en.cube.setAllRGBA(new float[] { en.flashv, en.flashv, en.flashv, en.flashv });
+				en.flashv -= 0.03f;
+				if (en.flashv <= 0.4) {
+					en.flashing = false;
+					en.cube.inverseAlpha = false;
+					en.cube.setAllRGBA(new float[] { 1, 1, 1, 1 });
+				}
+			}
+		}
 	}
 
 	public void moveBullets() {
@@ -301,15 +435,17 @@ public class Ingame implements Scene {
 			if (new Vector3f(cur.quad.translation).sub(player.loc).length() < bulletWidth) {
 				Audio.soundSystem.quickPlay(true, Audio.class.getResource("/audios/HitSound.wav"), "HitSound.wav",
 						false, 0, 0, 0, SoundSystemConfig.ATTENUATION_NONE, 0);
+				if(!ConfigurationOption.godMode)
 				life -= .1f;
 				if (life < 0.1f) {
 					lose();
 				}
 			}
 			cur.quad.translation.add(cur.v);
-
-			if (cur.quad.translation.y < 0) {
-				// g.removeObject(cur.quad);
+			Vector3f bulloc = cur.quad.translation;
+			if (bulloc.y < -room || bulloc.y > room ) {
+				bulletsInstance.add(cur);
+				cur.quad.setVisible(false);
 			} else {
 				bullets.add(cur);
 			}
@@ -369,31 +505,129 @@ public class Ingame implements Scene {
 			player.loc.z = room;
 	}
 
+	public void fire(Enemy en, Vector3f velocity) {
+		Bullet bull = bulletsInstance.poll();
+		Quad q = bull.quad;
+		q.translation.set(en.cube.translation);
+		bull.v = velocity;
+		q.setVisible(true);
+		bullets.add(bull);
+	}
+
 	public void fire(int boxId, Vector3f velocity) {
-		Quad q = Generator.normalQuad();
-		q.put(0, 0, 0, bulletWidth, bulletWidth, false);
-		q.mapTexture(new Vector2f(3 / 16f, 1 / 16f), new Vector2f(4 / 16f, 2 / 16f));
-		q.translation.add(enemy[boxId].translation);
-		bullets.add(new Bullet(q, velocity));
-		g.addObject(q);
+		fire(enemy[boxId], velocity);
 	}
 
 	public void fire(int boxId) {
-		fire(boxId, new Vector3f().add(player.loc).sub(enemy[boxId].translation).normalize().mul(0.3f));
+		fire(boxId, new Vector3f().add(player.loc).sub(enemy[boxId].cube.translation).normalize().mul(0.3f));
 	}
 
-	CharQuad[] youLose;
+	public void fire(Enemy en) {
+		fire(en, new Vector3f().add(player.loc).sub(en.cube.translation).normalize().mul(0.3f));
+	}
+
+	public void flashAll() {
+		for (Enemy en : enemy) {
+			en.flash();
+		}
+	}
+
+	public void shootPossibility(float p) {
+		for (Enemy en : enemy) {
+			if (Math.random() < p) {
+				en.flash();
+				fire(en);
+			}
+		}
+	}
+
+	public void loadTempo(String filename) {
+		BufferedReader reader = new BufferedReader(new InputStreamReader(getClass().getResourceAsStream(filename)));
+		StringBuilder out = new StringBuilder();
+		String line;
+		try {
+			while ((line = reader.readLine()) != null) {
+				out.append(line);
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		String[] tempos = out.toString().split(",");
+		int i = 0;
+		for (String tempo : tempos) {
+			String[] duet = tempo.split(":");
+			float time = Float.parseFloat(duet[0]);
+			int action = Integer.parseInt(duet[1]);
+			effQ.add(new Effect(time, action));
+			i++;
+		}
+	}
 
 	public void lose() {
+		CharQuad[] youLose;
 		g.clearScene();
-		youLose = Generator.StringQuadGenerator("You lose Orz",120, 10,200, 0, true);
+		youLose = Generator.StringQuadGenerator("You lose :|", 120, 10, 200, 0, true);
 		g.addOrthoObject(bg);
 		g.addOrthoObjects(youLose);
+		events.add(new timeEvent() {
+			{
+				time = time() + 1.5;
+			}
+
+			@Override
+			public void run() {
+				lose = true;
+			}
+		});
+	}
+	public void win() {
+		CharQuad[] youWin;
+		g.clearScene();
+		youWin = Generator.StringQuadGenerator("Nailed it :D", 120, 10, 200, 0, true);
+		g.addOrthoObject(bg);
+		g.addOrthoObjects(youWin);
+		events.add(new timeEvent() {
+			{
+				time = time() + 1.5;
+			}
+
+			@Override
+			public void run() {
+				lose = true;
+			}
+		});
+	}
+}
+
+class Effect {
+	public float time;
+	public int action;
+
+	public Effect(float time, int action) {
+		this.time = time;
+		this.action = action;
+	}
+}
+
+class Enemy {
+	public Cube cube;
+	public boolean flashing = false;
+	public float flashv = 0.0f;
+
+	public void flash() {
+		flashing = true;
+		flashv = 1;
+		cube.inverseAlpha = true;
+	}
+
+	public Enemy(Cube cube) {
+		this.cube = cube;
 	}
 }
 
 class Bullet {
-	Quad quad;
+	public Quad quad;
 	public Vector3f v;
 
 	public Bullet(Quad quad, Vector3f velocity) {
@@ -410,11 +644,4 @@ abstract class timeEvent implements Comparable<timeEvent> {
 	public int compareTo(timeEvent event) {
 		return time < event.time ? -1 : 1;
 	}
-}
-
-abstract class musicTimeEvent {
-	float time;
-	String source;
-
-	public abstract void run();
 }

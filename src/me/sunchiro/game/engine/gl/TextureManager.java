@@ -15,26 +15,35 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class TextureManager {
 	private List<Integer> textures = new ArrayList<Integer>();
+
 	public int getTexture(int id) {
 		return textures.get(id);
 	}
+
 	public synchronized int loadTexture(String filename, int textureUnit) {
 		ByteBuffer buff = null;
 		int tWidth = 0;
 		int tHeight = 0;
 		try {
-			InputStream in = getClass().getResourceAsStream(filename);
+			Class cls;
+			cls = Class.forName("me.sunchiro.game.engine.gl.TextureManager");
+			ClassLoader cLoader = cls.getClassLoader();
+			InputStream in = cLoader.getResourceAsStream(filename);
 			PNGDecoder decoder = new PNGDecoder(in);
 			tWidth = decoder.getWidth();
 			tHeight = decoder.getHeight();
 			buff = ByteBuffer.allocateDirect(4 * tWidth * tHeight);
-			decoder.decode(buff, tWidth*4, Format.RGBA);
+			decoder.decode(buff, tWidth * 4, Format.RGBA);
 			buff.flip();
 			in.close();
+		} catch (ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+
 		int texId = GL11.glGenTextures();
 		GL13.glActiveTexture(textureUnit);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
@@ -48,14 +57,16 @@ public class TextureManager {
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
 
 		// Setup what to do when the texture has to be scaled
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST );
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
 
 		int errorValue = GL11.glGetError();
-		 if (errorValue != GL11.GL_NO_ERROR) {
-			 System.out.println("Texture loading error");
-			 System.exit(-1);
-		 }
+		if (errorValue != GL11.GL_NO_ERROR)
+
+		{
+			System.out.println("Texture loading error");
+			System.exit(-1);
+		}
 		textures.add(texId);
 		return textures.size() - 1;
 	}

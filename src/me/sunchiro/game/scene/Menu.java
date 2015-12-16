@@ -80,7 +80,7 @@ public class Menu implements Scene{
 			}
 			@Override
 			public void run() {
-				// TODO Auto-generated method stub
+				g.cam.eye.x+=1;
 			}
 		});
 	}

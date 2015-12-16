@@ -55,7 +55,6 @@ public class Graphic {
 	private LinkedList<Drawable> objects = new LinkedList<Drawable>();
 	private LinkedList<Drawable> orthoObjects = new LinkedList<Drawable>();
 	public static Graphic instance;
-	public Vector3f eye = new Vector3f(1, 1, 1);
 	public Vector3f look = new Vector3f(0, 0, 0);
 	public int vertexCount = 0;
 	private int indicesCount = 0;
@@ -119,7 +118,7 @@ public class Graphic {
 		vaoId = GL30.glGenVertexArrays();
 		vboiId = GL15.glGenBuffers();
 		vboId = GL15.glGenBuffers();
-		tid_charmap = texManager.loadTexture("/textures/charmap.png", GL13.GL_TEXTURE0);
+		tid_charmap = texManager.loadTexture("textures/charmap.png", GL13.GL_TEXTURE0);
 		shader.setupShader();
 		// testQuad();
 
@@ -285,7 +284,7 @@ public class Graphic {
 		// GL20.glUseProgram(0);
 	}
 
-	private void render() {
+	private synchronized void render() {
 		GL11.glClearColor(bgColor.x,bgColor.y,bgColor.z,0);
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL20.glUseProgram(shader.getPID());
